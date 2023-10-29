@@ -23,6 +23,8 @@
                 nodes = data.nodes;
                 edges = data.edges;
 
+                console.log(data)
+
                 weightScale = d3.scaleLinear()
                     .domain(d3.extent(edges, d => d.weight))
                     .range([1, 5]);
