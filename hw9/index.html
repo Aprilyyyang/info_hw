@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Homework 9</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <style>
+  
+    .gridlines line {
+      stroke: #bbb;
+    }
+    
+    .gridlines .domain {
+      stroke: none;
+    }
+  
+ </style>
+
+</head>
+
+<body>
+    
+    <h3>
+        Name: Yueyi Yang
+        <br>
+        NetID: yy2225
+
+    </h3>
+
+    <p id = "p1">
+
+        <svg height="700" width="600" id="lollipop">
+            <defs>
+                <marker id="start" markerWidth="1" markerHeight="6" refX="-2" refY="3" orient="auto">
+                    <path d="M 0 0 V 6 H 1 V 0 Z" />
+                </marker>
+                <marker id="end" markerWidth="6" markerHeight="4" refX="7" refY="2" orient="auto">
+                    <path d="M 0 0 V 4 L 6 2 Z" />
+                </marker>
+            </defs>
+        </svg>
+      
+        
+          <script>
+
+            let margin = {top: 10, right: 10, bottom: 45, left: 45};
+
+            let chartWidth = 600 - margin.left - margin.right;
+            let chartHeight = 700 - margin.top - margin.bottom;
+
+            // 导入数据
+            const data = d3.json('artists.json').then(data => {
+
+                console.log(data)
+
+                // 比例尺
+                let yScale = d3.scaleLinear()
+                    .domain([0,1])
+                    .range([chartHeight, 0]);
+
+                var categories = [];
+                data.forEach(d => {
+                    categories.push(d.category);
+                });
+
+                console.log("categories",categories);
+
+                const percentExtent = [0, 1]
+                const percentScale = d3.scaleLinear().domain(percentExtent).range( [chartHeight,0]);
+                const xScale = d3.scalePoint()
+                                        .domain(categories)
+                                        .range([0, chartWidth])
+                                        .padding(0.2);
+              
+
+
+                // 坐标轴 
+                let xAxis = d3.axisBottom(xScale);
+                let yAxis = d3.axisLeft(yScale).tickFormat(d3.format('.0%'));
+
+                // 网格线
+                let xGrid = d3.axisBottom(xScale)
+                    .tickSize(chartHeight+10)
+                    .tickFormat('');
+
+                let yGrid = d3.axisLeft(yScale)
+                    .tickSize(-chartWidth-10)
+                    .tickFormat('');
+
+                // 图表组
+                let chart = d3.select('svg')
+                            .append('g')
+                            .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+                // 绘制坐标轴和网格线
+                chart.append('g').call(yAxis); 
+                chart.append('g').attr('transform', `translate(0, ${chartHeight+10})`).call(xAxis);
+                chart.append('g')
+                        .attr("class", "gridlines")
+                        .call(yGrid);
+                chart.append('g').attr("class", "gridlines").call(xGrid);
+
+
+                // Use data join to create <g> tags for lollipops
+                const lollipops = chart.selectAll(".lollipop")
+                    .data(data)
+                    .enter()
+                    .append("g")
+                    .attr("class", "lollipop")
+                    .attr("transform", d => `translate(${xScale(d.category)}, 0)`); ;
+
+                // Log the lollipops selection
+                console.log(lollipops);
+
+                // Add text elements for labels
+                const label1970 = chart.append('text')
+                    .attr('class', 'label')
+                    .attr('text-anchor', 'start')
+                    .style('visibility', 'hidden');
+                    
+                const label2020 = chart.append('text')
+                    .attr('class', 'label')
+                    .attr('text-anchor', 'start')
+                    .style('visibility', 'hidden');
+
+
+                lollipops.each( function(d){
+                    console.log(this, d);
+
+
+
+                    const circle1970 = d3.select(this).append("circle")
+                        .attr("cx", 0)
+                        .attr("cy", yScale(d["1970"]))
+                        .attr("r", 8)
+                        .attr("fill", "darkred")
+                        .attr("stroke", "black")
+                        .attr("stroke-width", 1);
+
+                    // Append the 2020 circle and label
+                    const circle2020 = d3.select(this).append("circle")
+                        .attr("cx", 0)
+                        .attr("cy", yScale(d["2020"]))
+                        .attr("r", 8)
+                        .attr("fill", "blue")
+                        .attr("stroke", "black")
+                        .attr("stroke-width", 1);
+
+                        d3.select(this)
+                            .on("mouseover", function () {
+                                circle1970.attr("stroke-width", 3);
+                                circle2020.attr("stroke-width", 3);
+                                showLabels.call(this, "1970");
+                                showLabels.call(this, "2020");
+                            })
+                            .on("mouseout", function () {
+                                circle1970.attr("stroke-width", 1);
+                                circle2020.attr("stroke-width", 1);
+                                hideLabels();
+                            });
+                    
+                    // Append the line connecting the circles
+                    d3.select(this).append("line")
+                        .attr("x1", 0) // Set the correct position for the category
+                        .attr("y1", yScale(d["1970"])) // Set the correct position for the 1970 percent value
+                        .attr("x2", 0) // Set the correct position for the category
+                        .attr("y2", yScale(d["2020"])) // Set the correct position for the 2020 percent value
+                        .attr("stroke", "black");
+
+                    const lineLength = Math.sqrt(0 * 0 + (yScale(d["2020"]) - yScale(d["1970"])) ** 2);
+
+                    if (lineLength > 30) {
+                        d3.select(this).append("line")
+                            .attr("x1", 0)
+                            .attr("y1", yScale(d["1970"]))
+                            .attr("x2", 0)
+                            .attr("y2", yScale(d["2020"]))
+                            .attr("stroke", "black")
+                            .attr("marker-start", "url(#start)")
+                            .attr("marker-end", "url(#end)");
+                    }
+
+                
+
+                });
+                
+                function showLabels(d, year) {
+                    const label = d3.select(this).append("g").attr("class", "label")
+                
+                    // 获取圆圈的y坐标
+                    const circleY = yScale(d[year]);
+                    
+                    // 如果lollipop在图表的左侧
+                    if (xScale(d.category) < chartWidth / 2) {
+                        label.append("text")
+                            .attr("class", "label")
+                            .attr("x", 15) // 调整位置，显示在右侧
+                            .attr("y", 0)
+                            .attr("dy", -10) // 调整位置
+                            .text(d3.format('.0%')(d[year]));
+
+                    } else { // lollipop在图表的右侧
+                        label.append("text")
+                            .attr("class", "label")
+                            .attr("x", -15) // 调整位置，显示在左侧
+                            .attr("y", 0)
+                            .attr("dy", -10) // 调整位置
+                            .text(d3.format('.0%')(d[year]));
+                    }
+                }
+  
+
+                function hideLabels() {
+                    const labels = d3.selectAll(".label");
+                    labels.remove();
+                }
+
+            });
+            
+
+
+
+          </script>
+          
+    </p>
+</body>
+</html>

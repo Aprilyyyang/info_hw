@@ -135,6 +135,7 @@
             //Using a forEach loop in Javascript, 
             //create a 3px radius circle for each point in the dataset,
             //located at its proper place on the chart.
+            
             data.forEach((d) => {
                 chartArea.append("circle")
                         .attr("cx", xScale(d["Release Day"]))// Set the x-coordinate using xScale
